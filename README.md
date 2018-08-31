@@ -12,4 +12,4 @@ More details about the Javascript Event Loop can be founded here:
 
 License
 -------
-MIT license
+[MIT license](LICENSE)
