@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Do not lock the Event loop!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <h2>Do not lock the Event loop!</h2>
+  <div>
+      This demo show why it is bad to do a CPU intensive work in Javascript without release the event loop sometimes during the computation.
+      The demo computes an artificial CPU workload based on sin computation.
+      This is the code:
+
+    <pre><code>
+      utility.useCpuFor(100) // a computation of 100ms
+      utility.useCpuFor(50) // a computation of 50ms
+      utility.useCpuFor(50) // a computation of 500ms
+      utility.useCpuFor(100) // a computation of 20ms
+      utility.useCpuFor(40) // a computation of 20ms
+      // A CPU intensive computation on an array
+      let list = [20, 40, 20, 30, 50, 100, 30, 100, 100, 30, 40, 100];
+      for (let i = 0; i < list.length; i++) {
+        utility.useCpuFor(list[i]);
+      }
+    </code></pre>
+    The above code produces an event-loop lock for 1 seconds, and thus prevents the browser to do any other thing (e.g., render the animation on the page).
+    In order to remove the event-loop lock without too many changes in the code, we propose to use the yield syntax in combination of a library function <code>yieldControl</code>.
+    The <code>yieldControl</code> function takes in input a generator with the work to be executed and a callback function to be executed at the end of the computation.
+    We can transform the above intensive CPU code with the following by adding the yield command every time we want to release the event-loop:
+
+    <pre><code>
+       utility.useCpuFor(100) // a computation of 100ms
+       yield;
+       utility.useCpuFor(50) // a computation of 50ms
+       yield;
+       utility.useCpuFor(50) // a computation of 500ms
+       yield;
+       utility.useCpuFor(100) // a computation of 20ms
+       yield;
+       utility.useCpuFor(40) // a computation of 20ms
+       yield;
+       // A CPU intensive computation on an array
+       let list = [20, 40, 20, 30, 50, 100, 30, 100, 100, 30, 40, 100];
+       for (let i = 0; i < list.length; i++) {
+         utility.useCpuFor(list[i])
+         yield;
+       }
+    </code></pre>
+
+    In the rest of the page there a simple demo, to show how does it work and perform.
+    The <code>Without YieldControll</code> button run the first kind of code, instead of the <code>With YieldControl</code> button run the second version of the code.
+    It is possible to see that the first version take exactly a seconds to run but block the gif animation.
+    Instead, the second version, the one using <code>YieldControl</code>, take more seconds to run but do not block the gif animation.
+    Indeed, the yieldControll version interpolates the computation with the other task that the browser usually does. 
+  </div>
+
+  <h3>The Demo</h3>
+
+  <img src="https://media0.giphy.com/media/l0He4fJxPCbfqv7Xi/giphy.gif" />
+  <br /><br />
+
+  <button onclick="sequentialMain()">Without YieldControl</button>
+  <button onclick="yieldMain()">With YieldControl</button>
+
+  <p>Log:</p>
+  <div id="log-div" style="overflow-y: scroll;font-size:8pt;height: 400px;">
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
